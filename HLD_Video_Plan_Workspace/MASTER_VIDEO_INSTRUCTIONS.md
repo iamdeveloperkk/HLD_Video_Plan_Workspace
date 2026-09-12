@@ -11,6 +11,10 @@ Add the instructions that should apply to every video here. Codex will read this
 5. Create a production plan listing visuals, demonstrations, citations, and editing notes.
 6. Review the completed package for factual accuracy, clarity, and alignment with the goal.
 
+## Improving the master instructions
+
+When a working rule discovered during a specific video should apply to future videos, add it to this file under the most relevant section. This keeps recurring instructions out of individual prompts and makes the workflow improve over time. After the change is reviewed, commit and push it to the repository.
+
 ## Persistent preferences
 
 Write any channel-specific rules, tone, audience details, required source standards, and recurring production preferences below.
@@ -22,4 +26,3 @@ Write any channel-specific rules, tone, audience details, required source standa
 - Script format:
 - Visual style:
 - Publishing checklist:
-
