@@ -1,8 +1,8 @@
-"""Video-wide configuration and theme."""
+"""Video-wide configuration template."""
 
-from common.engine.canvas import Canvas
+from _common.engine.canvas import Canvas
 
-VIDEO_NAME = "cyber_attack_x_faang"
+VIDEO_NAME = "replace_me"
 CANVAS = Canvas(width=1280, height=720, fps=30, duration=16.0)
 THEME = {
     "background": (7, 16, 34),

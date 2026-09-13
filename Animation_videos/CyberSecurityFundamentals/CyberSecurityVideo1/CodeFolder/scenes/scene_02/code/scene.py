@@ -6,30 +6,30 @@ import argparse
 import sys
 from pathlib import Path
 
-ROOT = Path(__file__).resolve().parents[7]
+ROOT = Path(__file__).resolve().parents[6]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
-SHARED_ROOT = ROOT / "videos"
+SHARED_ROOT = ROOT
 if str(SHARED_ROOT) not in sys.path:
     sys.path.insert(0, str(SHARED_ROOT))
-VIDEO_ROOT = ROOT / "videos" / "CyberSecurityFundamentals" / "CyberSecurityVideo1" / "CodeWorkspaceForVideo"
+VIDEO_ROOT = ROOT / "CyberSecurityFundamentals" / "CyberSecurityVideo1" / "CodeFolder"
 if str(VIDEO_ROOT) not in sys.path:
     sys.path.insert(0, str(VIDEO_ROOT))
 
 from PIL import ImageDraw
 
-from common.engine.arrows import Arrow
-from common.engine.canvas import BLUE, Canvas, PANEL, WHITE, MUTED
-from common.engine.components import Component
-from common.engine.icon_node import IconNode
-from common.engine.icon_registry import configure_asset_roots
-from common.engine.layout import LayoutError, Rect, assert_inside, validate_elements
-from common.engine.nodes import Node
-from common.engine.panels import DiscussionPanel
-from common.engine.particles import Particle
-from common.engine.renderer import Renderer
-from common.engine.timeline import Timeline
-from common.engine.typography import font
+from _common.engine.arrows import Arrow
+from _common.engine.canvas import BLUE, Canvas, PANEL, WHITE, MUTED
+from _common.engine.components import Component
+from _common.engine.icon_node import IconNode
+from _common.engine.icon_registry import configure_asset_roots
+from _common.engine.layout import LayoutError, Rect, assert_inside, validate_elements
+from _common.engine.nodes import Node
+from _common.engine.panels import DiscussionPanel
+from _common.engine.particles import Particle
+from _common.engine.renderer import Renderer
+from _common.engine.timeline import Timeline
+from _common.engine.typography import font
 from video_config import CANVAS
 from scenes.scene_02.config import ARCHITECTURE_SEPARATION, MAIN_PANEL as MAIN_PANEL_VALUES, NODE_REVEALS, RIGHT_PANEL as RIGHT_PANEL_VALUES
 
@@ -45,7 +45,7 @@ NODE_SPECS = [
 ]
 
 SCENE_ROOT = VIDEO_ROOT / "scenes" / "scene_02"
-configure_asset_roots(SCENE_ROOT / "assets" / "icons", VIDEO_ROOT / "assets" / "icons")
+configure_asset_roots(SCENE_ROOT / "assets" / "icons", VIDEO_ROOT.parent / "AssetFolder" / "icons")
 
 
 class Takeaway(Component):
