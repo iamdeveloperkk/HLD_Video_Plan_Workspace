@@ -6,35 +6,46 @@ import argparse
 import sys
 from pathlib import Path
 
-ROOT = Path(__file__).resolve().parents[3]
+ROOT = Path(__file__).resolve().parents[7]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
+SHARED_ROOT = ROOT / "videos"
+if str(SHARED_ROOT) not in sys.path:
+    sys.path.insert(0, str(SHARED_ROOT))
+VIDEO_ROOT = ROOT / "videos" / "CyberSecurityFundamentals" / "CyberSecurityVideo1" / "CodeWorkspaceForVideo"
+if str(VIDEO_ROOT) not in sys.path:
+    sys.path.insert(0, str(VIDEO_ROOT))
 
 from PIL import ImageDraw
 
-from animation_engine.arrows import Arrow
-from animation_engine.canvas import ACTIVE, BLUE, BORDER, Canvas, PANEL, WHITE, MUTED
-from animation_engine.components import Component
-from animation_engine.icon_node import IconNode
-from animation_engine.layout import LayoutError, Rect, assert_inside, assert_no_overlap, assert_no_overlap_with_region, validate_elements
-from animation_engine.nodes import Node
-from animation_engine.panels import DiscussionPanel
-from animation_engine.particles import Particle
-from animation_engine.renderer import Renderer
-from animation_engine.timeline import Timeline
-from animation_engine.typography import font
+from common.engine.arrows import Arrow
+from common.engine.canvas import BLUE, Canvas, PANEL, WHITE, MUTED
+from common.engine.components import Component
+from common.engine.icon_node import IconNode
+from common.engine.icon_registry import configure_asset_roots
+from common.engine.layout import LayoutError, Rect, assert_inside, validate_elements
+from common.engine.nodes import Node
+from common.engine.panels import DiscussionPanel
+from common.engine.particles import Particle
+from common.engine.renderer import Renderer
+from common.engine.timeline import Timeline
+from common.engine.typography import font
+from video_config import CANVAS
+from scenes.scene_02.config import ARCHITECTURE_SEPARATION, MAIN_PANEL as MAIN_PANEL_VALUES, NODE_REVEALS, RIGHT_PANEL as RIGHT_PANEL_VALUES
 
 
-MAIN_PANEL = Rect(35, 105, 875, 515)
-RIGHT_PANEL = Rect(930, 45, 300, 200)
-ARCHITECTURE_SEPARATION = 50
+MAIN_PANEL = Rect(*MAIN_PANEL_VALUES)
+RIGHT_PANEL = Rect(*RIGHT_PANEL_VALUES)
 NODE_SPECS = [
-    ("USERS", 135, 0.8, "generic.user", IconNode),
-    ("CDN / WAF", 145, 2.6, None, Node),
-    ("API GATEWAY", 155, 4.4, "aws.api_gateway", IconNode),
-    ("SERVICES", 135, 6.2, None, Node),
-    ("DATABASE", 135, 8.0, "generic.database", IconNode),
+    ("USERS", 135, NODE_REVEALS["USERS"], "generic.user", IconNode),
+    ("CDN / WAF", 145, NODE_REVEALS["CDN / WAF"], None, Node),
+    ("API GATEWAY", 155, NODE_REVEALS["API GATEWAY"], "aws.api_gateway", IconNode),
+    ("SERVICES", 135, NODE_REVEALS["SERVICES"], None, Node),
+    ("DATABASE", 135, NODE_REVEALS["DATABASE"], "generic.database", IconNode),
 ]
+
+SCENE_ROOT = VIDEO_ROOT / "scenes" / "scene_02"
+configure_asset_roots(SCENE_ROOT / "assets" / "icons", VIDEO_ROOT / "assets" / "icons")
 
 
 class Takeaway(Component):
@@ -140,15 +151,19 @@ def make_frame(canvas, nodes, arrows, timeline, takeaway, panel, particle, elaps
     return image
 
 
+def render_scene(output: Path):
+    canvas = CANVAS
+    nodes, arrows, timeline, takeaway, panel, particle, gap, available_width, total_node_width, number_of_gaps = build_scene()
+    print_layout(nodes, gap, available_width, total_node_width, number_of_gaps)
+    validate_scene(nodes, arrows, timeline, takeaway, panel)
+    Renderer(canvas).render(lambda elapsed: make_frame(canvas, nodes, arrows, timeline, takeaway, panel, particle, elapsed), output)
+
+
 def main():
     parser = argparse.ArgumentParser(description="Render Scene 2 - The Big-Tech Architecture")
     parser.add_argument("--output", type=Path, default=ROOT / "output" / "Cyber_Attack_X_FAANG_Video01_Scene02.mp4")
     args = parser.parse_args()
-    canvas = Canvas()
-    nodes, arrows, timeline, takeaway, panel, particle, gap, available_width, total_node_width, number_of_gaps = build_scene()
-    print_layout(nodes, gap, available_width, total_node_width, number_of_gaps)
-    validate_scene(nodes, arrows, timeline, takeaway, panel)
-    Renderer(canvas).render(lambda elapsed: make_frame(canvas, nodes, arrows, timeline, takeaway, panel, particle, elapsed), args.output)
+    render_scene(args.output)
 
 
 if __name__ == "__main__":

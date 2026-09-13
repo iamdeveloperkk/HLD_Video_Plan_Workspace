@@ -6,6 +6,7 @@ from PIL import ImageDraw
 
 from .canvas import ACTIVE, BORDER, NODE_ACTIVE, NODE_FILL, WHITE, MUTED
 from .components import Component
+from .layout import Rect
 from .typography import centered_text, font
 
 
@@ -15,7 +16,7 @@ def alpha_color(color, alpha: float):
 
 class Node(Component):
     def __init__(self, label: str, width: int = 140, height: int = 100, x: float = 0, y: float = 0, sequence: int = 0, reveal: float = 0.0, name: Optional[str] = None):
-        super().__init__(name or label, bounds=__import__("animation_engine.layout", fromlist=["Rect"]).Rect(x, y, width, height), reveal=reveal)
+        super().__init__(name or label, bounds=Rect(x, y, width, height), reveal=reveal)
         self.label = label
         self.sequence = sequence
 

@@ -5,6 +5,7 @@ from PIL import ImageDraw
 
 from .canvas import BLUE
 from .components import Component
+from .layout import Rect
 from .nodes import alpha_color
 
 
@@ -18,7 +19,7 @@ class Arrow(Component):
     def _bounds(self):
         start = self.start_component.output()
         end = self.end_component.input()
-        return __import__("animation_engine.layout", fromlist=["Rect"]).Rect(min(start[0], end[0]), min(start[1], end[1]) - 8, abs(end[0] - start[0]), abs(end[1] - start[1]) + 16)
+        return Rect(min(start[0], end[0]), min(start[1], end[1]) - 8, abs(end[0] - start[0]), abs(end[1] - start[1]) + 16)
 
     def draw(self, image, elapsed: float, active: bool = False) -> None:
         opacity = max(0.0, min(1.0, (elapsed - self.reveal) / 0.5))
