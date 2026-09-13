@@ -977,4 +977,4 @@ FINAL EDIT            ⏳
 
 NEXT:
 
-Generate Video 1 visuals scene-by-scene.
+Generate Video 1 visuals scene-by-scene.    
