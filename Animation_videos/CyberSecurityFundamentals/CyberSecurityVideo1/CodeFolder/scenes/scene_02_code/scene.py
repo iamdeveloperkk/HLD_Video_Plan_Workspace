@@ -9,10 +9,10 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[6]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
-SHARED_ROOT = ROOT
+SHARED_ROOT = ROOT / "Animation_videos"
 if str(SHARED_ROOT) not in sys.path:
     sys.path.insert(0, str(SHARED_ROOT))
-VIDEO_ROOT = ROOT / "CyberSecurityFundamentals" / "CyberSecurityVideo1" / "CodeFolder"
+VIDEO_ROOT = SHARED_ROOT / "CyberSecurityFundamentals" / "CyberSecurityVideo1" / "CodeFolder"
 if str(VIDEO_ROOT) not in sys.path:
     sys.path.insert(0, str(VIDEO_ROOT))
 
@@ -31,7 +31,7 @@ from _common.engine.renderer import Renderer
 from _common.engine.timeline import Timeline
 from _common.engine.typography import font
 from video_config import CANVAS
-from scenes.scene_02.config import ARCHITECTURE_SEPARATION, MAIN_PANEL as MAIN_PANEL_VALUES, NODE_REVEALS, RIGHT_PANEL as RIGHT_PANEL_VALUES
+from scenes.scene_02_code.config import ARCHITECTURE_SEPARATION, MAIN_PANEL as MAIN_PANEL_VALUES, NODE_REVEALS, RIGHT_PANEL as RIGHT_PANEL_VALUES
 
 
 MAIN_PANEL = Rect(*MAIN_PANEL_VALUES)
@@ -44,7 +44,7 @@ NODE_SPECS = [
     ("DATABASE", 135, NODE_REVEALS["DATABASE"], "generic.database", IconNode),
 ]
 
-SCENE_ROOT = VIDEO_ROOT / "scenes" / "scene_02"
+SCENE_ROOT = VIDEO_ROOT / "scenes" / "scene_02_code"
 configure_asset_roots(SCENE_ROOT / "assets" / "icons", VIDEO_ROOT.parent / "AssetFolder" / "icons")
 
 

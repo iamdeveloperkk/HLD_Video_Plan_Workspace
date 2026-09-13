@@ -57,7 +57,7 @@ VideoName/
 ├── CodeFolder/
 │   ├── video_config.py
 │   └── scenes/
-│       └── scene_01/
+	│       └── scene_01_code/
 │           └── scene.py
 ├── AssetFolder/
 │   ├── icons/
@@ -65,7 +65,7 @@ VideoName/
 │   ├── backgrounds/
 │   └── audio/
 └── OutputFolder/
-	└── scene_01/
+	└── scene_01_output/
 ```
 
 Import the reusable engine from `Animation_videos/_common`; do not copy it into a video.

@@ -7,16 +7,19 @@ import importlib.util
 import sys
 from pathlib import Path
 
-ANIMATION_ROOT = Path(__file__).resolve().parents[2]
+ANIMATION_ROOT = Path(__file__).resolve().parents[1]
 
 
 def load_scene(series: str, video: str, scene: str):
     video_root = ANIMATION_ROOT / series / video / "CodeFolder"
-    scene_file = video_root / "scenes" / scene / "code" / "scene.py"
+    scene_file = video_root / "scenes" / f"{scene}_code" / "scene.py"
     if not scene_file.exists():
-        scene_file = video_root / "scenes" / scene / "code" / f"{scene}.py"
+        scene_file = video_root / "scenes" / f"{scene}_code" / f"{scene}.py"
     if not scene_file.exists():
-        raise SystemExit(f"{series}/{video}/CodeFolder/scenes/{scene}")
+        raise SystemExit(f"{series}/{video}/CodeFolder/scenes/{scene}_code")
+    scene_dir = str(scene_file.parent)
+    if scene_dir not in sys.path:
+        sys.path.insert(0, scene_dir)
     spec = importlib.util.spec_from_file_location(f"{series}.{video}.{scene}", scene_file)
     module = importlib.util.module_from_spec(spec)
     sys.modules[spec.name] = module
@@ -33,7 +36,7 @@ def main():
     args = parser.parse_args()
     module = load_scene(args.series, args.video, args.scene)
     video_root = ANIMATION_ROOT / args.series / args.video
-    output = args.output or video_root / "OutputFolder" / args.scene / f"{args.video}_{args.scene}.mp4"
+    output = args.output or video_root / "OutputFolder" / f"{args.scene}_output" / f"{args.video}_{args.scene}.mp4"
     module.render_scene(output)
 
 
