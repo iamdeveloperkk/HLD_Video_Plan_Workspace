@@ -1,0 +1,47 @@
+{
+  "version": "2.0",
+  "canvas": "1280x720",
+  "font": "Inter",
+  "folders": {
+    "icon_tiles": [
+      "blue_tile.png",
+      "cyan_tile.png",
+      "orange_tile.png",
+      "purple_tile.png",
+      "red_tile.png"
+    ],
+    "particles": [
+      "cyan_request.png",
+      "cyan_sql.png",
+      "red_attack.png",
+      "red_impact.png"
+    ],
+    "rings": [
+      "blue_active_ring.png",
+      "orange_active_ring.png",
+      "red_active_ring.png"
+    ],
+    "panels": [
+      "blue_popup.png",
+      "green_popup.png",
+      "orange_popup.png",
+      "purple_popup.png",
+      "red_popup.png"
+    ],
+    "arrows": [
+      "blue_flow_arrow.png",
+      "cyan_flow_arrow.png",
+      "orange_flow_arrow.png",
+      "red_flow_arrow.png"
+    ],
+    "background": [
+      "matched_cinematic_background.png"
+    ],
+    "font": [
+      "Inter-Bold.otf",
+      "Inter-Medium.otf",
+      "Inter-Regular.otf",
+      "Inter-SemiBold.otf"
+    ]
+  }
+}

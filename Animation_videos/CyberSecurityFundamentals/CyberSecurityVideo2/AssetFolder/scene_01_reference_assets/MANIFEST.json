@@ -1,0 +1,66 @@
+{
+  "source_reference": "a_clean_high_resolution_png_style_ui_graphic_asse.png",
+  "asset_strategy": "one independent PNG per visual entity/effect",
+  "categories": {
+    "icons": [
+      "api_gateway.png",
+      "attacker.png",
+      "client.png",
+      "ecs.png",
+      "rds.png"
+    ],
+    "particles": [
+      "blue_glow_core.png",
+      "cyan_glow_core.png",
+      "cyan_packet.png",
+      "cyan_particle.png",
+      "green_glow_core.png",
+      "orange_glow_core.png",
+      "purple_glow_core.png",
+      "red_glow_core.png",
+      "red_particle.png"
+    ],
+    "rings": [
+      "blue_ring.png",
+      "orange_ring.png"
+    ],
+    "panels": [
+      "blue_panel.png",
+      "orange_large_panel.png",
+      "purple_panel.png",
+      "red_panel.png"
+    ],
+    "arrows": [
+      "cyan_arrow.png",
+      "orange_arrow.png",
+      "red_arrow.png"
+    ],
+    "reference_crops": [
+      "api_gateway.png",
+      "attacker.png",
+      "blue_panel.png",
+      "blue_ring.png",
+      "client.png",
+      "cyan_arrow.png",
+      "cyan_packet.png",
+      "cyan_particle.png",
+      "ecs.png",
+      "orange_arrow.png",
+      "orange_large_panel.png",
+      "orange_ring.png",
+      "purple_panel.png",
+      "rds.png",
+      "red_arrow.png",
+      "red_panel.png",
+      "red_particle.png"
+    ]
+  },
+  "generated_glow_cores": [
+    "blue_glow_core.png",
+    "cyan_glow_core.png",
+    "green_glow_core.png",
+    "orange_glow_core.png",
+    "purple_glow_core.png",
+    "red_glow_core.png"
+  ]
+}
