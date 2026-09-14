@@ -97,19 +97,19 @@ T_IMPACT = (15.2, 16.0)
 POPUPS = {
     "api": {
         "width": 390,
-        "height": 190,
+        "height": 185,
         "preferred": "above",
         "offset_y": 18,
     },
     "ecs": {
         "width": 500,
-        "height": 230,
+        "height": 205,
         "preferred": "above",
         "offset_y": 18,
     },
     "rds": {
         "width": 500,
-        "height": 230,
+        "height": 205,
         "preferred": "above",
         "offset_y": 18,
     },

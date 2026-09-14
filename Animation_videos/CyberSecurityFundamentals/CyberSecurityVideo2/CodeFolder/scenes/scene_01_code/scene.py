@@ -472,11 +472,34 @@ def draw_network_arrow(
     )
 
 
+def draw_arrival_pulse(
+    frame: Image.Image,
+    node: str,
+    color: tuple[int, int, int],
+    progress: float,
+) -> None:
+    """Show a short expanding reception pulse at a node."""
+    pulse = clamp(progress / 0.42, 0.0, 1.0)
+    radius = 34 + int(58 * ease_out_cubic(pulse))
+    draw = ImageDraw.Draw(frame, "RGBA")
+    draw.ellipse(
+        (
+            node_center(node)[0] - radius,
+            node_center(node)[1] - radius,
+            node_center(node)[0] + radius,
+            node_center(node)[1] + radius,
+        ),
+        outline=(*color, int(190 * (1.0 - pulse))),
+        width=3,
+    )
+
+
 def draw_active_ring(
     frame: Image.Image,
     node: str,
     color: tuple[int, int, int],
     intensity: float,
+    node_scale: float = 1.0,
 ) -> None:
 
     image_name = (
@@ -488,6 +511,14 @@ def draw_active_ring(
     image = load_scene_asset(config.ASSETS[image_name])
 
     cx, cy = node_center(node)
+    node_config = config.NODES[node]
+    rendered_icon = fit_asset(
+        load_scene_asset(config.ASSETS[node]),
+        max(1, int(node_config["width"] * node_scale)),
+        max(1, int(node_config["height"] * node_scale)),
+    )
+    ring_width = rendered_icon.width + 34
+    ring_height = rendered_icon.height + 28
 
     draw_glow(
         frame,
@@ -501,8 +532,8 @@ def draw_active_ring(
         frame,
         image,
         (cx, cy),
-        150,
-        125,
+        ring_width,
+        ring_height,
         opacity=intensity,
         scale=1.0 + 0.04 * intensity,
     )
@@ -513,6 +544,7 @@ def draw_architecture(
     active_node: Optional[str] = None,
     dim_opacity: float = 0.40,
     scale_active: bool = True,
+    reveal_progress: Optional[float] = None,
 ) -> None:
     """
     ONE architecture renderer.
@@ -520,28 +552,49 @@ def draw_architecture(
     State-specific visual emphasis is supplied through parameters.
     """
 
-    for source, target in (
+    connections = (
         ("client", "api"),
         ("api", "ecs"),
         ("ecs", "rds"),
-    ):
+    )
+
+    for connection_index, (source, target) in enumerate(connections):
         alpha = 190
 
         if active_node:
             if source != active_node and target != active_node:
                 alpha = 60
 
-        draw_connection(
-            frame,
-            source,
-            target,
-            alpha,
+        if reveal_progress is None:
+            draw_connection(frame, source, target, alpha)
+            continue
+
+        connection_progress = clamp(
+            (reveal_progress - 0.20 - connection_index * 0.24) / 0.24,
+            0.0,
+            1.0,
+        )
+        if connection_progress <= 0.0:
+            continue
+        start = node_center(source)
+        end = lerp_point(node_center(source), node_center(target), smoothstep(connection_progress))
+        ImageDraw.Draw(frame, "RGBA").line(
+            (*start, *end),
+            fill=(*config.MUTED, alpha),
+            width=2,
         )
 
     for name in ("client", "api", "ecs", "rds"):
         active = name == active_node
 
         opacity = 1.0 if active or active_node is None else dim_opacity
+        if reveal_progress is not None:
+            node_index = ("client", "api", "ecs", "rds").index(name)
+            opacity *= clamp(
+                (reveal_progress - node_index * 0.22) / 0.32,
+                0.0,
+                1.0,
+            )
 
         scale = 1.0
 
@@ -564,6 +617,7 @@ def draw_architecture(
                 name,
                 color,
                 1.0,
+                node_scale=scale,
             )
 
         image = load_scene_asset(
@@ -746,6 +800,67 @@ def draw_tether(
 # Popup rendering
 # ============================================================================
 
+def wrap_text_to_width(
+    text: str,
+    text_font: ImageFont.ImageFont,
+    max_width: int,
+) -> list[str]:
+    """Wrap text by measured font width while preserving explicit newlines."""
+    draw = ImageDraw.Draw(Image.new("RGB", (1, 1)))
+    wrapped: list[str] = []
+
+    for paragraph in text.split("\n"):
+        words = paragraph.split()
+        if not words:
+            wrapped.append("")
+            continue
+
+        current = ""
+        for word in words:
+            candidate = f"{current} {word}" if current else word
+            if draw.textbbox((0, 0), candidate, font=text_font)[2] <= max_width:
+                current = candidate
+                continue
+
+            if current:
+                wrapped.append(current)
+                current = ""
+
+            # Split a single overlong token so no glyph can cross the region.
+            for character in word:
+                candidate = f"{current}{character}"
+                if draw.textbbox((0, 0), candidate, font=text_font)[2] > max_width and current:
+                    wrapped.append(current)
+                    current = character
+                else:
+                    current = candidate
+
+        if current:
+            wrapped.append(current)
+
+    return wrapped
+
+
+def draw_wrapped_text(
+    target: Image.Image,
+    text: str,
+    box: tuple[int, int, int, int],
+    text_font: ImageFont.ImageFont,
+    fill: tuple[int, int, int, int],
+    line_gap: int = 6,
+) -> int:
+    """Draw wrapped text inside a hard rectangular content boundary."""
+    x1, y1, x2, y2 = box
+    lines = wrap_text_to_width(text, text_font, max(1, x2 - x1))
+    draw = ImageDraw.Draw(target, "RGBA")
+    line_height = text_font.getbbox("Ag")[3] - text_font.getbbox("Ag")[1] + line_gap
+    visible_lines = max(0, (y2 - y1 + line_gap) // line_height)
+
+    for index, line in enumerate(lines[:visible_lines]):
+        draw.text((x1, y1 + index * line_height), line, font=text_font, fill=fill)
+
+    return min(len(lines), visible_lines) * line_height
+
 def popup_alpha(local_t: float) -> float:
     enter = smoothstep(
         clamp(local_t / 0.18, 0.0, 1.0)
@@ -847,23 +962,35 @@ def draw_glass_popup(
         fill=(*color, int(210 * alpha_factor)),
     )
 
-    popup_draw.text(
-        (22, 25),
+    padding_x = 28
+    content_left = padding_x
+    content_right = popup.width - padding_x
+    title_box = (content_left, 22, content_right, 54)
+    draw_wrapped_text(
+        popup,
         title,
-        fill=(*config.WHITE, int(255 * alpha_factor)),
-        font=FONT_BODY_BOLD,
+        title_box,
+        FONT_BODY_BOLD,
+        (*config.WHITE, int(255 * alpha_factor)),
+        line_gap=2,
     )
 
-    y = 65
+    popup_draw.line(
+        (content_left, 62, content_right, 62),
+        fill=(*color, int(150 * alpha_factor)),
+        width=1,
+    )
 
-    for line in lines:
-        popup_draw.text(
-            (22, y),
-            line,
-            fill=(*config.MUTED, int(235 * alpha_factor)),
-            font=FONT_BODY,
-        )
-        y += 34
+    body_text = "\n".join(lines)
+    body_box = (content_left, 78, content_right, popup.height - 20)
+    draw_wrapped_text(
+        popup,
+        body_text,
+        body_box,
+        FONT_BODY,
+        (*config.MUTED, int(235 * alpha_factor)),
+        line_gap=7,
+    )
 
     frame.alpha_composite(
         popup,
@@ -950,6 +1077,7 @@ def draw_sql_box(
     sql_lines: list[str],
     color: tuple[int, int, int],
     alpha: int = 235,
+    reveal: float = 1.0,
 ) -> None:
 
     draw = ImageDraw.Draw(frame, "RGBA")
@@ -971,11 +1099,19 @@ def draw_sql_box(
 
     yy = y + 62
 
-    for line in sql_lines:
+    visible_lines = min(
+        len(sql_lines),
+        max(0, int(reveal * (len(sql_lines) + 1))),
+    )
+
+    for line_index, line in enumerate(sql_lines[:visible_lines]):
+        line_reveal = clamp(reveal * (len(sql_lines) + 1) - line_index, 0.0, 1.0)
+        visible_characters = max(1, int(len(line) * line_reveal))
+        line_color = config.RED if "unexpected input" in line else config.WHITE
         draw.text(
             (x + 22, yy),
-            line,
-            fill=(*config.WHITE, alpha),
+            line[:visible_characters],
+            fill=(*line_color, int(alpha * line_reveal)),
             font=FONT_SQL,
         )
         yy += 31
@@ -1051,6 +1187,7 @@ def draw_ecs_zoom(
         config.NORMAL_SQL,
         config.ORANGE,
         int(235 * focus),
+        reveal=clamp(progress / 0.72, 0.0, 1.0),
     )
 
     draw = ImageDraw.Draw(frame, "RGBA")
@@ -1248,19 +1385,21 @@ def draw_right_panel(
         font=FONT_TITLE,
     )
 
-    draw.text(
-        (x1 + 20, y1 + 58),
+    draw_wrapped_text(
+        frame,
         config.SUBTITLE,
-        fill=(*config.MUTED, 230),
-        font=FONT_SMALL,
+        (x1 + 20, y1 + 58, x2 - 20, y1 + 104),
+        FONT_SMALL,
+        (*config.MUTED, 230),
+        line_gap=2,
     )
 
     draw.line(
         (
             x1 + 20,
-            y1 + 90,
+            y1 + 112,
             x2 - 20,
-            y1 + 90,
+            y1 + 112,
         ),
         fill=(*config.PANEL_BORDER[:3], 130),
         width=1,
@@ -1271,7 +1410,7 @@ def draw_right_panel(
         "",
     )
 
-    y = y1 + 120
+    y = y1 + 142
 
     words = text.split()
     lines = []
@@ -1327,7 +1466,16 @@ def render_state(
             active_node=None,
             dim_opacity=0.8,
             scale_active=False,
+            reveal_progress=p,
         )
+
+        if p > 0.56:
+            draw_particle_between(
+                frame,
+                "api",
+                "ecs",
+                clamp((p - 0.56) / 0.44, 0.0, 1.0),
+            )
 
     elif state == "normal_request":
         draw_architecture(
@@ -1364,6 +1512,8 @@ def render_state(
             config.CYAN,
         )
 
+        draw_arrival_pulse(frame, "api", config.CYAN, state_progress(t, state))
+
         render_exclusive_popup_layer(
             frame,
             state,
@@ -1384,6 +1534,8 @@ def render_state(
             config.CYAN,
         )
 
+        draw_arrival_pulse(frame, "ecs", config.ORANGE, state_progress(t, state))
+
         render_exclusive_popup_layer(
             frame,
             state,
@@ -1403,6 +1555,8 @@ def render_state(
             "rds",
             config.CYAN,
         )
+
+        draw_arrival_pulse(frame, "rds", config.BLUE, state_progress(t, state))
 
         render_exclusive_popup_layer(
             frame,
@@ -1436,6 +1590,8 @@ def render_state(
             "rds",
             state_progress(t, state),
         )
+
+        draw_arrival_pulse(frame, "rds", config.BLUE, state_progress(t, state) - 0.58)
 
     elif state == "normal_db":
         draw_database_execution(
@@ -1479,6 +1635,8 @@ def render_state(
             malicious=True,
         )
 
+        draw_arrival_pulse(frame, "ecs", config.RED, state_progress(t, state))
+
     elif state == "malicious_travel":
         draw_architecture(
             frame,
@@ -1502,6 +1660,8 @@ def render_state(
             malicious=True,
         )
 
+        draw_arrival_pulse(frame, "rds", config.RED, state_progress(t, state) - 0.58)
+
     elif state == "malicious_db":
         draw_database_execution(
             frame,
@@ -1523,6 +1683,9 @@ def render_state(
             config.RED,
             170,
         )
+
+        impact_progress = state_progress(t, state)
+        draw_arrival_pulse(frame, "rds", config.RED, impact_progress * 0.45)
 
         draw = ImageDraw.Draw(
             frame,
@@ -1547,6 +1710,20 @@ def render_state(
             "UNINTENDED DATABASE BEHAVIOR",
             fill=(*config.RED, 255),
             font=FONT_BODY_BOLD,
+        )
+
+        rows_y = 585
+        draw.text(
+            (500, rows_y),
+            "AFFECTED ROWS  42   43   44   ...",
+            fill=(*config.RED, int(255 * clamp(impact_progress * 2.5, 0.0, 1.0))),
+            font=FONT_SMALL,
+        )
+        draw.text(
+            (760, rows_y),
+            "SECURITY ALERT",
+            fill=(*config.WHITE, int(255 * clamp((impact_progress - 0.35) * 2.5, 0.0, 1.0))),
+            font=FONT_SMALL,
         )
 
 
