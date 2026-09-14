@@ -1,124 +1,166 @@
-"""Programmatic animation scene for Cyber Attack X FAANG — Video 2."""
+"""Scene 1: conceptual SQL injection flow through an HLD architecture."""
+
 from __future__ import annotations
-import argparse, sys
+
+import sys
 from pathlib import Path
-ROOT = Path(__file__).resolve().parents[5]
-if str(ROOT) not in sys.path: sys.path.insert(0, str(ROOT))
-VIDEO_ROOT = ROOT / "CyberSecurityFundamentals" / "CyberSecurityVideo2"
-CODE_ROOT = VIDEO_ROOT / "CodeFolder"
-if str(CODE_ROOT) not in sys.path: sys.path.insert(0, str(CODE_ROOT))
 
 from PIL import ImageDraw
+
+ROOT = Path(__file__).resolve().parents[5]
+ANIMATION_ROOT = ROOT
+SHARED_ROOT = ANIMATION_ROOT / "_common"
+VIDEO_ROOT = ANIMATION_ROOT / "CyberSecurityFundamentals" / "CyberSecurityVideo2"
+CODE_ROOT = VIDEO_ROOT / "CodeFolder"
+for path in (ANIMATION_ROOT, CODE_ROOT):
+    if str(path) not in sys.path:
+        sys.path.insert(0, str(path))
+
+from _common.engine.arrows import Arrow
 from _common.engine.canvas import BLUE, PANEL, WHITE, MUTED
 from _common.engine.components import Component
-from _common.engine.layout import Rect
+from _common.engine.icon_node import IconNode
+from _common.engine.icon_registry import configure_asset_roots
+from _common.engine.layout import LayoutError, Rect, validate_elements
+from _common.engine.nodes import alpha_color
+from _common.engine.panels import DiscussionPanel
+from _common.engine.particles import Particle
 from _common.engine.renderer import Renderer
-from _common.engine.typography import font, centered_text
+from _common.engine.typography import centered_text, font
 from video_config import CANVAS
-
-RED=(235,70,80); GREEN=(72,205,135); YELLOW=(242,190,70)
-
-def fade(reveal, elapsed, duration=.55):
-    x=max(0,min(1,(elapsed-reveal)/duration)); return int((x*x*(3-2*x))*255)
-def rgba(c,a): return (*c,max(0,min(255,int(a))))
-
-class Box(Component):
-    def __init__(self,name,bounds,label,reveal=0,sublabel="",border=BLUE,fill=PANEL):
-        super().__init__(name,bounds,reveal=reveal)
-        self.label,self.sublabel,self.border,self.fill=label,sublabel,border,fill
-    def input(self): return (self.x,self.y+self.height/2)
-    def output(self): return (self.x+self.width,self.y+self.height/2)
-    def draw(self,image,elapsed,active=False):
-        a=fade(self.reveal,elapsed)
-        if not a:return
-        d=ImageDraw.Draw(image); border=RED if active else self.border
-        fill=(65,35,40) if active else self.fill
-        d.rounded_rectangle((self.x,self.y,self.bounds.right,self.bounds.bottom),radius=12,
-                            fill=rgba(fill,a),outline=rgba(border,a),width=2)
-        centered_text(d,(self.x+10,self.y+10,self.bounds.right-10,self.y+self.height*.58),
-                      self.label,font(17,True),rgba(WHITE,a))
-        if self.sublabel:
-            centered_text(d,(self.x+10,self.y+self.height*.58,self.bounds.right-10,self.bounds.bottom-8),
-                          self.sublabel,font(12),rgba(MUTED,a))
-
-class Arrow(Component):
-    def __init__(self,name,p1,p2,reveal=0,fill=BLUE,width=3):
-        super().__init__(name,Rect(min(p1[0],p2[0]),min(p1[1],p2[1]),
-                                   max(1,abs(p2[0]-p1[0])),max(1,abs(p2[1]-p1[1]))),
-                         reveal=reveal,allow_overlap=True)
-        self.p1,self.p2,self.fill,self.line_width=p1,p2,fill,width
-    def draw(self,image,elapsed,active=False):
-        a=fade(self.reveal,elapsed,.45)
-        if not a:return
-        d=ImageDraw.Draw(image); d.line((*self.p1,*self.p2),fill=rgba(self.fill,a),width=self.line_width)
-        import math
-        ang=math.atan2(self.p2[1]-self.p1[1],self.p2[0]-self.p1[0]); L=10
-        pts=[self.p2,(self.p2[0]-L*math.cos(ang-.45),self.p2[1]-L*math.sin(ang-.45)),
-             (self.p2[0]-L*math.cos(ang+.45),self.p2[1]-L*math.sin(ang+.45))]
-        d.polygon(pts,fill=rgba(self.fill,a))
-
-class Dot(Component):
-    def __init__(self,name,start,end,reveal,duration=2.8,fill=RED):
-        super().__init__(name,Rect(start[0]-8,start[1]-8,16,16),reveal=reveal,allow_overlap=True)
-        self.start,self.end,self.duration,self.fill=start,end,duration,fill
-    def draw(self,image,elapsed,active=False):
-        if elapsed<self.reveal:return
-        t=max(0,min(1,(elapsed-self.reveal)/self.duration))
-        x=self.start[0]+(self.end[0]-self.start[0])*t
-        y=self.start[1]+(self.end[1]-self.start[1])*t
-        d=ImageDraw.Draw(image); d.ellipse((x-7,y-7,x+7,y+7),fill=self.fill)
-
-def header(image,title):
-    d=ImageDraw.Draw(image)
-    d.text((50,35),title,font=font(26,True),fill=WHITE)
-    d.text((50,70),"Cyber Attack X FAANG  •  Attack Mechanics",font=font(16),fill=MUTED)
-
-def panel(image,points,reveals,elapsed):
-    x,y,w,h=(930,45,300,405); d=ImageDraw.Draw(image)
-    d.rounded_rectangle((x,y,x+w,y+h),radius=14,fill=PANEL,outline=(29,75,121),width=2)
-    d.text((x+18,y+18),"ATTACK MECHANICS",font=font(13,True),fill=BLUE)
-    yy=y+58
-    for p,r in zip(points,reveals):
-        a=fade(r,elapsed,.45)
-        if not a:continue
-        d.ellipse((x+18,yy+5,x+25,yy+12),fill=rgba(BLUE,a))
-        d.text((x+34,yy),p,font=font(13),fill=rgba(WHITE,a))
-        yy+=78 if len(p)>46 else 58
-
-def takeaway_box(image,text,elapsed):
-    if elapsed<14:return
-    a=fade(14,elapsed,.7); x,y,w,h=(35,105,875,515); d=ImageDraw.Draw(image)
-    box=(x+35,y+410,x+w-35,y+472)
-    d.rounded_rectangle(box,radius=10,fill=rgba(PANEL,a),outline=rgba(BLUE,a),width=1)
-    d.text((box[0]+18,box[1]+9),"TAKEAWAY",font=font(11,True),fill=rgba(BLUE,a))
-    d.text((box[0]+18,box[1]+28),text,font=font(15,True),fill=rgba(WHITE,a))
-
 from scenes.scene_01_code.config import *
 
-def make_frame(elapsed):
-    image=Renderer(CANVAS).background(); d=ImageDraw.Draw(image)
-    header(image,SCENE_TITLE)
-    d.rounded_rectangle((35,105,910,620),radius=14,fill=PANEL,outline=(29,75,121),width=2)
 
-    a=Box("app",Rect(70,245,190,110),"WEB APP",1.0,"builds query")
-    b=Box("db",Rect(650,245,180,110),"DATABASE",2.2,"executes query")
-    a.draw(image,elapsed); b.draw(image,elapsed); Arrow("q",a.output(),b.input(),2.2).draw(image,elapsed)
-    Dot("input",a.output(),b.input(),3.2).draw(image,elapsed)
-    if elapsed>=6:
-        d.rounded_rectangle((300,210,575,380),radius=12,fill=rgba((65,35,40),235),outline=rgba(RED,240),width=2)
-        centered_text(d,(315,225,560,270),"UNTRUSTED INPUT",font(18,True),WHITE)
-        centered_text(d,(315,275,560,345),"changes query structure",font(16),WHITE)
-    if elapsed>=9: d.text((390,400),"QUERY MEANING CHANGED",font=font(15,True),fill=RED)
+configure_asset_roots(VIDEO_ROOT / "AssetFolder", SHARED_ROOT / "assets")
 
-    panel(image,DISCUSSION_POINTS,DISCUSSION_REVEALS,elapsed)
-    takeaway_box(image,TAKEAWAY,elapsed)
+MAIN_RECT = Rect(*MAIN_PANEL)
+RIGHT_RECT = Rect(*RIGHT_PANEL)
+
+
+class Takeaway(Component):
+    def __init__(self):
+        super().__init__("Takeaway", Rect(60, 528, 825, 54), reveal=TAKEAWAY_REVEAL, allow_overlap=True)
+
+    def draw(self, image, elapsed: float, active: bool = False) -> None:
+        opacity = self.opacity(elapsed, 0.7)
+        if opacity <= 0:
+            return
+        draw = ImageDraw.Draw(image)
+        draw.rounded_rectangle(
+            (self.x, self.y, self.bounds.right, self.bounds.bottom),
+            radius=10,
+            fill=alpha_color(PANEL, opacity),
+            outline=alpha_color(BLUE, opacity),
+            width=1,
+        )
+        draw.text((self.x + 18, self.y + 9), "TAKEAWAY", font=font(11, True), fill=alpha_color(BLUE, opacity))
+        draw.text((self.x + 18, self.y + 27), TAKEAWAY, font=font(15, True), fill=alpha_color(WHITE, opacity))
+
+
+def make_node(name: str, label: str, icon: str, subtitle: str) -> IconNode:
+    x, y, width, height = NODE_LAYOUT[name]
+    return IconNode(
+        icon=icon,
+        label=label,
+        width=width,
+        height=height,
+        x=x,
+        y=y,
+        sequence=list(("client", "gateway", "service", "database", "attacker")).index(name) + 1,
+        reveal=NODE_REVEALS[name],
+        icon_size=52 if name != "attacker" else 44,
+    )
+
+
+def build_scene():
+    client = make_node("client", "CLIENT", "actors.client", "user-controlled input")
+    gateway = make_node("gateway", "API GATEWAY", "aws.api_gateway", "request entry point")
+    service = make_node("service", "ECS SERVICE", "aws.ecs", "builds query")
+    database = make_node("database", "RDS", "aws.rds", "stores data")
+    attacker = make_node("attacker", "ATTACKER", "generic.attacker", "malicious request")
+
+    nodes = [client, gateway, service, database, attacker]
+    arrows = [
+        Arrow(client, gateway, reveal=NODE_REVEALS["gateway"] - 0.35),
+        Arrow(gateway, service, reveal=NODE_REVEALS["service"] - 0.35),
+        Arrow(service, database, reveal=NODE_REVEALS["database"] - 0.35),
+    ]
+    normal_particle = Particle(client, database, route=[client, gateway, service, database], start=6.4, duration=3.0, color=(185, 235, 255))
+    attack_particle = Particle(attacker, database, route=[attacker, gateway, service, database], start=9.2, duration=3.2, color=(235, 70, 80))
+    discussion = DiscussionPanel(
+        "SQL INJECTION",
+        DISCUSSION_POINTS,
+        RIGHT_RECT.x,
+        RIGHT_RECT.y,
+        RIGHT_RECT.width,
+        RIGHT_RECT.height,
+        DISCUSSION_REVEALS,
+    )
+    takeaway = Takeaway()
+    return nodes, arrows, normal_particle, attack_particle, discussion, takeaway
+
+
+def validate_scene(nodes, arrows, discussion, takeaway):
+    try:
+        validate_elements(nodes, MAIN_RECT)
+        validate_elements([takeaway], MAIN_RECT)
+        for arrow in arrows:
+            if not MAIN_RECT.contains(arrow.bounds):
+                raise LayoutError(f"{arrow.name} crosses the main panel")
+        if discussion.bounds.overlaps(MAIN_RECT):
+            raise LayoutError("discussion panel overlaps the main panel")
+    except LayoutError as error:
+        print("LAYOUT VALIDATION: FAILED")
+        print(f"- {error}")
+        raise SystemExit(1) from error
+    print("LAYOUT VALIDATION: PASS")
+
+
+def active_node_index(elapsed: float, start: float, duration: float, count: int):
+    if elapsed < start or elapsed > start + duration:
+        return None
+    return min(count - 1, int(((elapsed - start) / duration) * (count - 1)))
+
+
+def make_frame(elapsed: float):
+    nodes, arrows, normal_particle, attack_particle, discussion, takeaway = build_scene()
+    image = Renderer(CANVAS).background()
+    draw = ImageDraw.Draw(image)
+    draw.text((50, 35), SCENE_TITLE, font=font(26, True), fill=WHITE)
+    draw.text((50, 70), "A request becomes dangerous when input changes query meaning.", font=font(16), fill=MUTED)
+    draw.rounded_rectangle((MAIN_RECT.x, MAIN_RECT.y, MAIN_RECT.right, MAIN_RECT.bottom), radius=14, fill=PANEL, outline=(29, 75, 121), width=2)
+    draw.text((MAIN_RECT.x + 25, MAIN_RECT.y + 22), "APPLICATION DATA PATH", font=font(13, True), fill=BLUE)
+
+    for arrow in arrows:
+        arrow.draw(image, elapsed)
+
+    normal_particle.draw(image, elapsed)
+    attack_particle.draw(image, elapsed)
+
+    normal_active = active_node_index(elapsed, normal_particle.start, normal_particle.duration, 4)
+    attack_active = active_node_index(elapsed, attack_particle.start, attack_particle.duration, 4)
+    for index, node in enumerate(nodes):
+        active = index == normal_active or (index > 0 and index - 1 == attack_active)
+        node.draw(image, elapsed, active=active)
+
+    if elapsed >= 6.0:
+        draw.rounded_rectangle((300, 390, 700, 455), radius=10, fill=alpha_color((65, 35, 40), 0.92), outline=alpha_color((235, 70, 80), 0.95), width=2)
+        centered_text(draw, (315, 398, 685, 425), "USER-CONTROLLED INPUT", font(16, True), WHITE)
+        centered_text(draw, (315, 425, 685, 448), "query altered → unexpected database operation", font(13), WHITE)
+
+    if elapsed >= 9.2:
+        draw.text((70, 410), "MALICIOUS REQUEST", font=font(12, True), fill=(235, 70, 80))
+
+    discussion.draw(image, elapsed)
+    takeaway.draw(image, elapsed)
     return image
 
-def main():
-    p=argparse.ArgumentParser(); p.add_argument("--output",type=Path,default=Path("scene_output.mp4")); a=p.parse_args()
-    Renderer(CANVAS).render(make_frame,a.output)
 
-def render_scene(output):
+def render_scene(output: Path) -> None:
+    nodes, arrows, _, _, discussion, takeaway = build_scene()
+    validate_scene(nodes, arrows, discussion, takeaway)
     Renderer(CANVAS).render(make_frame, output)
 
-if __name__=="__main__": main()
+
+if __name__ == "__main__":
+    render_scene(Path("scene_output.mp4"))
