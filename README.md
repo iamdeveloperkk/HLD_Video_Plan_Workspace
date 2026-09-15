@@ -14,6 +14,7 @@ codex
 ## Structure
 
 - `MASTER_VIDEO_INSTRUCTIONS.md` — permanent production SOP for every video.
+- `YouTube_Creator_OS/` — project-level creator operations and visual production standards.
 - `research/topic-research/` — reusable research across topics.
 - `videos/_template/` — the standardized project template.
 - `videos/<video-slug>/` — one complete production record per video.
